@@ -7,9 +7,9 @@ global using FluentValidation;
 global using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 global using System.Reflection;
 
+global using SurveyBasket.Api.Entities;
 global using SurveyBasket.Entities;
 global using SurveyBasket.Services;
-global using SurveyBasket.Contracts;
-global using SurveyBasket.Contracts.Requests;
-global using SurveyBasket.Contracts.Responses;
 global using SurveyBasket.Persistence;
+
+global using SurveyBasket.Api.Contracts.Auth;
