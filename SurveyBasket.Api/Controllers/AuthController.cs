@@ -20,7 +20,9 @@ public class AuthController(IAuthService authService) : ControllerBase
         var authResult = await _authService.GetTokenAsync(request.Email,
             request.Password);
 
-        return authResult is null ? BadRequest("user or password is invalid!") : Ok(authResult);
+        return authResult.IsSuccess 
+            ? Ok(authResult.Value) 
+            : Problem(statusCode: StatusCodes.Status400BadRequest, title: authResult.Error.Code, detail: authResult.Error.Message);
     }
 
     [HttpPost("refreshToken")]

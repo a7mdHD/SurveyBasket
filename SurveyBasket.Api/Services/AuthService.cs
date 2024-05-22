@@ -1,7 +1,6 @@
-﻿
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using SurveyBasket.Api.Authentication;
-using System.IdentityModel.Tokens.Jwt;
+using SurveyBasket.Api.Errors;
 using System.Security.Cryptography;
 
 namespace SurveyBasket.Api.Services;
@@ -44,18 +43,18 @@ public class AuthService(UserManager<ApplicationUser> userManager, IJwtProvider 
     }
 
 
-    public async Task<AuthResponse> GetTokenAsync(string email, string password,
+    public async Task<Result<AuthResponse>> GetTokenAsync(string email, string password,
         CancellationToken cancellationToken = default)
     {
         var user = await _userManager.FindByEmailAsync(email);
 
         if (user is null)
-            return null;
+            return Result.Failure<AuthResponse>(UserError.InvalidCredentials);
 
         var isValidPassword = await _userManager.CheckPasswordAsync(user, password);
 
         if (!isValidPassword)
-            return null;
+            return Result.Failure<AuthResponse>(UserError.InvalidCredentials);
 
         // generate token
 
@@ -71,7 +70,7 @@ public class AuthService(UserManager<ApplicationUser> userManager, IJwtProvider 
         });
         await _userManager.UpdateAsync(user);
 
-        return new AuthResponse
+        var response =  new AuthResponse
         (
             user.Id,
             user.FirstName,
@@ -82,6 +81,7 @@ public class AuthService(UserManager<ApplicationUser> userManager, IJwtProvider 
             refreshToken,
             refreshTokenExpiry
         );
+        return Result.Success<AuthResponse>(response);
     }
 
     public async Task<AuthResponse> GetRefreshTokenAsync(string token, string refreshToken, CancellationToken cancellationToken = default)
