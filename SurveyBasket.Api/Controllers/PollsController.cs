@@ -33,9 +33,11 @@ public class PollsController(IPollService pollService) : ControllerBase
     public async Task<IActionResult> Add([FromBody] PollRequest request,
         CancellationToken cancellationToken)
     {
-        var newPoll = await _pollService.AddAsync(request, cancellationToken);
+        var result = await _pollService.AddAsync(request, cancellationToken);
 
-        return CreatedAtAction(nameof(Get), new { id = newPoll.Id }, newPoll);
+        return result.IsSuccess 
+            ? CreatedAtAction(nameof(Get), new { id = result.Value.Id }, result.Value)
+            : result.ToProblem(StatusCodes.Status409Conflict);
     }
 
     [HttpPut("{id}")]
@@ -44,9 +46,13 @@ public class PollsController(IPollService pollService) : ControllerBase
     {
         var result = await _pollService.UpdateAsync(id, request, cancellationToken);
 
-        return result.IsSuccess 
+        return result.IsSuccess
             ? NoContent()
-            : Problem(statusCode: StatusCodes.Status404NotFound, title: PollError.PollNotFound.Code, detail: PollError.PollNotFound.Message);
+            : result.ToProblem(
+                result.Error.Equals(PollError.DuplicatedPollTitle)
+                ? StatusCodes.Status409Conflict
+                : StatusCodes.Status404NotFound
+            );
     }
 
     [HttpDelete("{id}")]

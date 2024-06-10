@@ -2,5 +2,9 @@
 
 public class PollError
 {
-    public static readonly Error PollNotFound = new("Poll.NotFound", "No poll was found with gien ID");
+    public static readonly Error PollNotFound =
+        new("Poll.NotFound", "No poll was found with gien ID");
+
+    public static readonly Error DuplicatedPollTitle =
+        new("Poll.DuplicatedPollTitle", "There is poll with the same title!");
 }

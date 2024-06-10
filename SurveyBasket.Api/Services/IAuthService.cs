@@ -6,8 +6,8 @@ public interface IAuthService
         CancellationToken cancellationToken = default);
     Task<Result<AuthResponse>> GetTokenAsync(string email, string password,
         CancellationToken cancellationToken = default);
-    Task<AuthResponse> GetRefreshTokenAsync(string token, string refreshToken,
+    Task<Result<AuthResponse>> GetRefreshTokenAsync(string token, string refreshToken,
         CancellationToken cancellationToken = default);
-    Task<bool> RevokeRefreshTokenAsync(string token, string refreshToken,
+    Task<Result> RevokeRefreshTokenAsync(string token, string refreshToken,
     CancellationToken cancellationToken = default);
 }
