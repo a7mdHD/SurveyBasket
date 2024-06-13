@@ -1,7 +1,7 @@
 ﻿namespace SurveyBasket.Api.Entities;
 
 [Owned]
-public class RefreshToken
+public sealed class RefreshToken
 {
     public string Token { get; set; } = string.Empty;
     public DateTime ExpiresOn { get; set; }

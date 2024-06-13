@@ -1,6 +1,4 @@
-﻿using SurveyBasket.Api.Entities;
-
-namespace SurveyBasket.Api.Persistence.EntitiesConfigurations;
+﻿namespace SurveyBasket.Api.Persistence.EntitiesConfigurations;
 
 public class ApplicationUserConfiguration : IEntityTypeConfiguration<ApplicationUser>
 {
