@@ -1,5 +1,6 @@
 ﻿using SurveyBasket.Api.Contracts.Answers;
 using SurveyBasket.Api.Contracts.Questions;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading;
 
@@ -43,6 +44,36 @@ public class QuestionService(ApplicationDbContext context) : IQuestionService
 
         return Result.Success<IEnumerable<QuestionResponse>>(questions);
     }
+
+    public async Task<Result<IEnumerable<QuestionResponse>>> GetAvailableAsync(int pollId, string userId, CancellationToken cancellationToken = default)
+    {
+        var hasVote = await _context.Votes
+            .AnyAsync(v => v.PollId == pollId && v.UserId == userId, cancellationToken);
+
+        if(hasVote)
+            return Result.Failure<IEnumerable<QuestionResponse>>(VoteError.DuplicatedVote);
+
+        var pollIsExists = await _context.Polls
+            .AnyAsync(x => x.Id == pollId && x.IsPublished && x.StartsAt <= DateOnly.FromDateTime(DateTime.UtcNow) && x.EndsAt >= DateOnly.FromDateTime(DateTime.UtcNow), cancellationToken);
+
+
+        if (!pollIsExists)
+            return Result.Failure<IEnumerable<QuestionResponse>>(PollError.PollNotFound);
+
+        var questions = await _context.Questions
+            .Where(x => x.PollId == pollId && x.IsActive)
+            .Include(x => x.Answers)
+            .Select(q => new QuestionResponse(
+                q.Id,
+                q.Content,
+                q.Answers.Where(a => a.IsActive).Select(a => new AnswerResponse(a.Id, a.Content))
+            ))
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        return Result.Success<IEnumerable<QuestionResponse>>(questions);
+    }
+
 
     public async Task<Result<QuestionResponse>> AddAsync(int pollId, QuestionRequest request, CancellationToken cancellationToken = default)
     {

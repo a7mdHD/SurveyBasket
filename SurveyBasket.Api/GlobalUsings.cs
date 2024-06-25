@@ -14,3 +14,4 @@ global using SurveyBasket.Persistence;
 global using SurveyBasket.Api.Abstractions;
 global using SurveyBasket.Api.Contracts.Auth;
 global using SurveyBasket.Api.Errors;
+global using SurveyBasket.Api.Extensions;

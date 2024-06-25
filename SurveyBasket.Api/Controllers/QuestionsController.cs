@@ -17,7 +17,7 @@ public class QuestionsController(IQuestionService questionService) : ControllerB
 
         return result.IsSuccess
             ? Ok(result.Value)
-            : result.ToProblem(StatusCodes.Status404NotFound);
+            : result.ToProblem();
     }
 
     [HttpGet("")]
@@ -27,7 +27,7 @@ public class QuestionsController(IQuestionService questionService) : ControllerB
 
         return result.IsSuccess
             ? Ok(result.Value)
-            : result.ToProblem(StatusCodes.Status404NotFound);
+            : result.ToProblem();
     }
 
 
@@ -38,11 +38,7 @@ public class QuestionsController(IQuestionService questionService) : ControllerB
 
         return result.IsSuccess
             ? CreatedAtAction(nameof(Get), new { pollId, result.Value.Id },result.Value)
-            : result.ToProblem(
-                result.Error.Code.Equals(QuestionError.QuestionNotFound)
-                ? StatusCodes.Status404NotFound
-                : StatusCodes.Status409Conflict
-                );
+            : result.ToProblem();
     }
 
     [HttpPut("{id}/update")]
@@ -52,11 +48,7 @@ public class QuestionsController(IQuestionService questionService) : ControllerB
 
         return result.IsSuccess
            ? NoContent()
-           : result.ToProblem(
-               result.Error.Code.Equals(QuestionError.QuestionNotFound)
-               ? StatusCodes.Status404NotFound
-               : StatusCodes.Status409Conflict
-               );
+           : result.ToProblem();
     }
 
     [HttpPut("{id}/toggleStatus")]
@@ -66,7 +58,7 @@ public class QuestionsController(IQuestionService questionService) : ControllerB
 
         return result.IsSuccess
             ? NoContent()
-            : result.ToProblem(StatusCodes.Status404NotFound);
+            : result.ToProblem();
     }
 
 }

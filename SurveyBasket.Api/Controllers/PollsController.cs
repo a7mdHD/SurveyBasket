@@ -14,9 +14,14 @@ public class PollsController(IPollService pollService) : ControllerBase
     [HttpGet("")]
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
-        var polls = await _pollService.GetAllAsync(cancellationToken);
+        return Ok(await _pollService.GetAllAsync(cancellationToken));
+    }
 
-        return Ok(polls.Adapt<IEnumerable<PollResponse>>());
+
+    [HttpGet("current")]
+    public async Task<IActionResult> GetCurrentAll(CancellationToken cancellationToken)
+    {
+        return Ok(await _pollService.GetCurrentAsync(cancellationToken));
     }
 
     [HttpGet("{id}")]
@@ -37,7 +42,7 @@ public class PollsController(IPollService pollService) : ControllerBase
 
         return result.IsSuccess 
             ? CreatedAtAction(nameof(Get), new { id = result.Value.Id }, result.Value)
-            : result.ToProblem(StatusCodes.Status409Conflict);
+            : result.ToProblem();
     }
 
     [HttpPut("{id}")]
@@ -46,13 +51,7 @@ public class PollsController(IPollService pollService) : ControllerBase
     {
         var result = await _pollService.UpdateAsync(id, request, cancellationToken);
 
-        return result.IsSuccess
-            ? NoContent()
-            : result.ToProblem(
-                result.Error.Equals(PollError.DuplicatedPollTitle)
-                ? StatusCodes.Status409Conflict
-                : StatusCodes.Status404NotFound
-            );
+        return result.IsSuccess ? NoContent() : result.ToProblem();
     }
 
     [HttpDelete("{id}")]
