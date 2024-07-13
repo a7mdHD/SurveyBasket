@@ -1,7 +1,4 @@
-﻿
-using System.Security.Claims;
-
-namespace SurveyBasket.Persistence;
+﻿namespace SurveyBasket.Persistence;
 
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, IHttpContextAccessor httpContextAccessor) :
         IdentityDbContext<ApplicationUser>(options)
