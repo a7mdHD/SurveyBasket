@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.WebUtilities;
 using SurveyBasket.Api.Authentication;
+using SurveyBasket.Api.Contracts.Users;
 using SurveyBasket.Api.Helpers;
 using System.Security.Cryptography;
 using System.Text;
@@ -195,6 +196,50 @@ public class AuthService(UserManager<ApplicationUser> userManager,
         return Result.Success();
     }
 
+
+    public async Task<Result> SendResetPasswordCodeAsync(string email)
+    {
+        if (await _userManager.FindByEmailAsync(email) is not { } user)
+            return Result.Success();
+
+        var confirmationCode = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+        confirmationCode = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(confirmationCode));
+
+        _logger.LogInformation("Confirmation Code : {confirmationCode}", confirmationCode);
+
+        await SendResetPasswordToken(user, confirmationCode);
+
+        return Result.Success();
+    }
+
+    public async Task<Result> ResetPasswordCodeAsync(ResetPasswordRequest request)
+    {
+        var user = await _userManager.FindByEmailAsync(request.Email);
+
+        if(user is null || !user.EmailConfirmed)
+            return Result.Failure(UserError.InvalidConfirmationCode);
+
+        IdentityResult result;
+
+        try
+        {
+            var code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(request.Code));
+
+            result = await _userManager.ResetPasswordAsync(user, code, request.NewPassword);
+        }
+        catch(FormatException)
+        {
+            result = IdentityResult.Failed(_userManager.ErrorDescriber.InvalidToken());
+        }
+
+        if (result.Succeeded)
+            Result.Success();
+
+        var error = result.Errors.First();
+        return Result.Failure(new Error(error.Code, error.Description, StatusCodes.Status401Unauthorized));
+    }
+
     private async Task<AuthResponse> GetAuthResponse(ApplicationUser user)
     {
         // generate token
@@ -245,4 +290,20 @@ public class AuthService(UserManager<ApplicationUser> userManager,
         await Task.CompletedTask;
     }
 
+
+    private async Task SendResetPasswordToken(ApplicationUser user, string confirmationCode)
+    {
+        var origin = _httpContextAccessor.HttpContext?.Request.Headers.Origin;
+
+        var emailBody = EmailBodyBuilder.GenerateEmailBody("ForgetPassword",
+               new Dictionary<string, string>
+               {
+                    {"{{name}}", user.FirstName },
+                    {"[Product Name]", "Survy Basket" },
+                    {"{{action_url}}", $"{origin}/auth/forgetpassword?email={user.Email}&code={confirmationCode}"}
+               });
+
+        BackgroundJob.Enqueue(() => _emailService.SendEmailAsync(user.Email!, "✅ Survy Basket: Change Password", emailBody));
+        await Task.CompletedTask;
+    }
 }

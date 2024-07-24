@@ -1,4 +1,6 @@
-﻿namespace SurveyBasket.Api.Services;
+﻿using SurveyBasket.Api.Contracts.Users;
+
+namespace SurveyBasket.Api.Services;
 
 public interface IAuthService
 {
@@ -12,4 +14,6 @@ public interface IAuthService
         CancellationToken cancellationToken = default);
     Task<Result> ConfirmEmailAsync(ConfirmEmailRequest request);
     Task<Result> ResendConfirmationEmailAsync(ResendConfirmationEmailRequest request);
+    Task<Result> SendResetPasswordCodeAsync(string email);
+    Task<Result> ResetPasswordCodeAsync(ResetPasswordRequest request);
 }
