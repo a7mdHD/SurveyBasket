@@ -5,6 +5,7 @@ global using Mapster;
 global using FluentValidation;
 
 global using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+global using Microsoft.AspNetCore.Identity;
 global using System.Reflection;
 
 global using SurveyBasket.Api.Entities;
@@ -15,3 +16,5 @@ global using SurveyBasket.Api.Abstractions;
 global using SurveyBasket.Api.Contracts.Auth;
 global using SurveyBasket.Api.Errors;
 global using SurveyBasket.Api.Extensions;
+global using SurveyBasket.Api.Abstractions.Consts;
+global using SurveyBasket.Authentication.Filters;

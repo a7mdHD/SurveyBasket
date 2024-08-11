@@ -9,6 +9,7 @@ using System.Text;
 using SurveyBasket.Api.Settings;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Hangfire;
+using Microsoft.AspNetCore.Authorization;
 namespace SurveyBasket;
 
 public static class DependencyInjection
@@ -96,9 +97,13 @@ public static class DependencyInjection
     private static IServiceCollection AddAuthConfig(this IServiceCollection services,
         IConfiguration configuration)
     {
-        services.AddIdentity<ApplicationUser, IdentityRole>()
+        services.AddIdentity<ApplicationUser, ApplicationRole>()
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddDefaultTokenProviders();
+
+
+        services.AddTransient<IAuthorizationHandler, PermissionAuthorizationHandler>();
+        services.AddTransient<IAuthorizationPolicyProvider, PermissionAuthorizationPolicyProvider>();
 
         //Jwt Registration
 

@@ -11,5 +11,23 @@ public class ApplicationUserConfiguration : IEntityTypeConfiguration<Application
             .ToTable("RefreshTokens")
             .WithOwner()
             .HasForeignKey("UserId");
+
+
+        //Default Data
+        var passwordHasher = new PasswordHasher<ApplicationUser>();
+        builder.HasData(
+            new ApplicationUser
+            {
+                Id = DefaultUsers.AdminId,
+                FirstName = DefaultUsers.FirstName,
+                LastName = DefaultUsers.LastName,
+                UserName = DefaultUsers.AdminEmail,
+                NormalizedUserName = DefaultUsers.AdminEmail.ToUpper(),
+                Email = DefaultUsers.AdminEmail,
+                NormalizedEmail = DefaultUsers.AdminEmail.ToUpper(),
+                EmailConfirmed = true,
+                PasswordHash = passwordHasher.HashPassword(null!, DefaultUsers.AdminPassword)
+            }    
+        );
     }
 }

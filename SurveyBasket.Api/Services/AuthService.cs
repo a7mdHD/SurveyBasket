@@ -16,7 +16,8 @@ public class AuthService(UserManager<ApplicationUser> userManager,
     IJwtProvider jwtProvider,
     ILogger<AuthService> logger,
     IEmailSender emailService,
-    IHttpContextAccessor httpContextAccessor) : IAuthService
+    IHttpContextAccessor httpContextAccessor,
+    ApplicationDbContext context) : IAuthService
 {
     private readonly UserManager<ApplicationUser> _userManager = userManager;
     private readonly SignInManager<ApplicationUser> _signInManager = signInManager;
@@ -24,6 +25,7 @@ public class AuthService(UserManager<ApplicationUser> userManager,
     private readonly ILogger<AuthService> _logger = logger;
     private readonly IEmailSender _emailService = emailService;
     private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
+    private readonly ApplicationDbContext _context = context;
     private readonly int _refreshTokenExpiration = 14;
 
     public async Task<Result> RegisterAsync(RegisterRequest request,
@@ -92,7 +94,10 @@ public class AuthService(UserManager<ApplicationUser> userManager,
 
 
         if (result.Succeeded)
+        {
+            await _userManager.AddToRoleAsync(user, DefaultRoles.Member);
             return Result.Success();
+        }
 
         var error = result.Errors.First();
 
@@ -139,7 +144,7 @@ public class AuthService(UserManager<ApplicationUser> userManager,
 
         if(result.Succeeded)
         {
-            var response = await GetAuthResponse(user);
+            var response = await GetAuthResponse(user, cancellationToken);
             return Result.Success(response);
         }
 
@@ -166,7 +171,7 @@ public class AuthService(UserManager<ApplicationUser> userManager,
 
         userRefreshToken.RevokedOn = DateTime.UtcNow;
 
-        var response = await GetAuthResponse(user);
+        var response = await GetAuthResponse(user, cancellationToken);
 
         return Result.Success(response);
     }
@@ -240,11 +245,13 @@ public class AuthService(UserManager<ApplicationUser> userManager,
         return Result.Failure(new Error(error.Code, error.Description, StatusCodes.Status401Unauthorized));
     }
 
-    private async Task<AuthResponse> GetAuthResponse(ApplicationUser user)
+    private async Task<AuthResponse> GetAuthResponse(ApplicationUser user, CancellationToken cancellationToken)
     {
         // generate token
+       
+        var (userRoles, userPermissions) = await GetUserRolesAndPermissions(user, cancellationToken);
 
-        var (token, expiresIn) = _jwtProvider.GenerateToken(user);
+        var (token, expiresIn) = _jwtProvider.GenerateToken(user, userRoles, userPermissions!);
 
         var refreshToken = RefreshTokenGeneration();
         var refreshTokenExpiry = DateTime.UtcNow.AddDays(_refreshTokenExpiration);
@@ -305,5 +312,36 @@ public class AuthService(UserManager<ApplicationUser> userManager,
 
         BackgroundJob.Enqueue(() => _emailService.SendEmailAsync(user.Email!, "✅ Survy Basket: Change Password", emailBody));
         await Task.CompletedTask;
+    }
+
+
+    private async Task<(IEnumerable<string> userRoles, IEnumerable<string> userPermissions)> GetUserRolesAndPermissions(ApplicationUser user,
+        CancellationToken cancellationToken)
+    {
+        var userRoles = await _userManager.GetRolesAsync(user);
+
+        //var userPermissions = await _context.Roles
+        //    .Join(_context.RoleClaims,
+        //          role => role.Id,
+        //          claim => claim.RoleId,
+        //          (role, claim) => new { role, claim }
+        //    )
+        //    .Where(x => userRoles.Contains(x.role.Name!))
+        //    .Select(x => x.claim.ClaimValue)
+        //    .Distinct()
+        //    .ToListAsync(cancellationToken);
+
+        // OR
+
+        var userPermissions = await (from r in _context.Roles
+                                     join p in _context.RoleClaims
+                                     on r.Id equals p.RoleId
+                                     where userRoles.Contains(r.Name!)
+                                     select p.ClaimValue
+                                     )
+                                     .Distinct()
+                                     .ToListAsync(cancellationToken);
+
+        return (userRoles, userPermissions!);
     }
 }
