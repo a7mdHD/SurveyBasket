@@ -18,3 +18,4 @@ global using SurveyBasket.Api.Errors;
 global using SurveyBasket.Api.Extensions;
 global using SurveyBasket.Api.Abstractions.Consts;
 global using SurveyBasket.Authentication.Filters;
+global using SurveyBasket.Api.Contracts.Roles;
