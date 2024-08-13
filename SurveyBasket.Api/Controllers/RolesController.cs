@@ -13,7 +13,7 @@ public class RolesController(IRoleService roleService) : ControllerBase
     {
         var result = await _roleService.GetAllAsync(includeDisabled, cancellationToken);
 
-        return Ok(result.Value);
+        return Ok(result);
     }
 
     [HttpGet("{id}")]

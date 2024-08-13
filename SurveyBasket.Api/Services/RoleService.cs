@@ -6,7 +6,7 @@ public class RoleService(RoleManager<ApplicationRole> roleManager,
     private readonly RoleManager<ApplicationRole> _roleManager = roleManager;
     private readonly ApplicationDbContext _context = context;
 
-    public async Task<Result<IEnumerable<RoleResponse>>> GetAllAsync(bool? includeDisabled = false,
+    public async Task<IEnumerable<RoleResponse>> GetAllAsync(bool? includeDisabled = false,
         CancellationToken cancellationToken = default)
     {
         var roles = await _roleManager.Roles
@@ -14,7 +14,7 @@ public class RoleService(RoleManager<ApplicationRole> roleManager,
                     .ProjectToType<RoleResponse>()
                     .ToListAsync(cancellationToken);
 
-        return Result.Success<IEnumerable<RoleResponse>>(roles);
+        return roles;
     }
 
     public async Task<Result<RoleDetailsResponse>> GetByIdAsync(string id, CancellationToken cancellationToken = default)

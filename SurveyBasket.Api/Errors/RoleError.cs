@@ -9,5 +9,5 @@ public class RoleError
         new("Role.DuplicatedRole", "There is role with the same name is found!", StatusCodes.Status409Conflict);
 
     public static readonly Error InvalidPermissions =
-    new("Role.InvalidPermissions", "Invalid permissions!", StatusCodes.Status400BadRequest);
+        new("Role.InvalidPermissions", "Invalid permissions!", StatusCodes.Status400BadRequest);
 }
