@@ -1,5 +1,7 @@
 ﻿using SurveyBasket.Api.Contracts.Answers;
+using SurveyBasket.Api.Contracts.Common;
 using SurveyBasket.Api.Contracts.Questions;
+using System.Linq.Dynamic.Core;
 
 namespace SurveyBasket.Api.Services;
 
@@ -28,25 +30,33 @@ public class QuestionService(ApplicationDbContext context,
         return Result.Success(question);
     }
 
-    public async Task<Result<IEnumerable<QuestionResponse>>> GetAllAsync(int pollId, CancellationToken cancellationToken)
+    public async Task<Result<PaginatedList<QuestionResponse>>> GetAllAsync(int pollId,RequestFilters filters, CancellationToken cancellationToken)
     {
         var ispollFound = await _context.Polls.AnyAsync(p => p.Id == pollId, cancellationToken: cancellationToken);
 
         if (!ispollFound)
-            return Result.Failure<IEnumerable<QuestionResponse>>(PollError.PollNotFound);
+            return Result.Failure<PaginatedList<QuestionResponse>>(PollError.PollNotFound);
 
-        var questions = await _context.Questions
-            .Where(x => x.PollId == pollId)
-            .Include(x => x.Answers)
-            //.Select(q => new QuestionResponse(
-            //    q.PollId,
-            //    q.Content,
-            //    q.Answers.Select(a => new AnswerResponse(a.Id, a.Content))))
-            .ProjectToType<QuestionResponse>()
-            .AsNoTracking()
-            .ToListAsync();
+        var query = _context.Questions
+            .Where(x => x.PollId == pollId && (string.IsNullOrEmpty(filters.SearchValue) || x.Content.Contains(filters.SearchValue)));
 
-        return Result.Success<IEnumerable<QuestionResponse>>(questions);
+        if(!string.IsNullOrEmpty(filters.SortColumn))
+        {
+            query = query.OrderBy($"{filters.SortColumn} {filters.SortDirection}");
+        }
+        
+        var source = query
+                        .Include(x => x.Answers)
+                        //.Select(q => new QuestionResponse(
+                        //    q.PollId,
+                        //    q.Content,
+                        //    q.Answers.Select(a => new AnswerResponse(a.Id, a.Content))))
+                        .ProjectToType<QuestionResponse>()
+                        .AsNoTracking();
+
+        var questions = await PaginatedList<QuestionResponse>.CreateAsync(source, filters.PageNumber, filters.PageSize, cancellationToken);
+
+        return Result.Success(questions);
     }
 
     public async Task<Result<IEnumerable<QuestionResponse>>> GetAvailableAsync(int pollId, string userId, CancellationToken cancellationToken = default)
