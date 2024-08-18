@@ -11,6 +11,8 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Hangfire;
 using Microsoft.AspNetCore.Authorization;
 using SurveyBasket.Health;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 namespace SurveyBasket;
 
 public static class DependencyInjection
@@ -70,6 +72,53 @@ public static class DependencyInjection
             .AddDbContextCheck<ApplicationDbContext>(name:"Database")
             .AddHangfire(options => { options.MinimumAvailableServers = 1; })
             .AddCheck<MailProviderHealthCheck>(name: "Mail Provider");
+
+        services.AddRateLimiter(ratelimiteroptions =>
+        {
+            ratelimiteroptions.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+
+            // For Concurent rate limiter
+            //ratelimiteroptions.AddConcurrencyLimiter("concurency", options =>
+            //{
+            //    options.PermitLimit = 10; // accept concurent 10 requests
+            //    options.QueueLimit = 5;  // accept 5 request in queue list
+            //    options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            //});
+
+
+            // For Token bucket limiter
+            //ratelimiteroptions.AddTokenBucketLimiter("token", options => 
+            //{
+            //    options.TokenLimit = 1000;
+            //    options.QueueLimit = 4;
+            //    options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            //    options.ReplenishmentPeriod = TimeSpan.FromSeconds(10);
+            //    options.TokensPerPeriod = 10;
+            //    options.AutoReplenishment = true;
+            //});
+
+
+            // For Fixed window limiter
+            //ratelimiteroptions.AddFixedWindowLimiter("fixed", options => 
+            //{
+            //    options.PermitLimit = 10;
+            //    options.Window = TimeSpan.FromSeconds(20);
+            //    options.QueueLimit = 5;
+            //    options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            //});
+
+
+            // For Sliding window limiter
+            ratelimiteroptions.AddSlidingWindowLimiter("fixed", options =>
+            {
+                options.PermitLimit = 10;
+                options.Window = TimeSpan.FromSeconds(20);
+                options.SegmentsPerWindow = 4;
+                options.QueueLimit = 5;
+                options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            });
+        });
 
         return services;
     }
